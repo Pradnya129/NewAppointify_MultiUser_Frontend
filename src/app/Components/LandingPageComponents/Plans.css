@@ -1,0 +1,39 @@
+.plan-features {
+  padding-left: 0;             /* remove extra left space */
+  margin: 1rem 0;              /* moderate vertical spacing */
+}
+
+.plan-features ul {
+  list-style: disc;            /* classic solid bullets */
+  padding-left: 1rem;          /* small indentation */
+  margin-bottom: 0;
+}
+
+.plan-features li {
+  color: #f0f0f0;              /* soft white text */
+  font-size: 0.95rem;
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-body p {
+  margin-bottom: 1.5rem; /* Ensures space before bullet points */
+}
+
+.card-body ul {
+  list-style: disc;
+  padding-left: 20px;
+  margin-bottom: 1.5rem; /* Space before buttons */
+  margin-top: 0;
+}
+
+.card-body ul li {
+  margin-bottom: 0.5rem;
+}
+

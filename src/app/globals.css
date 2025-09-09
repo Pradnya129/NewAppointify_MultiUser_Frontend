@@ -1,0 +1,239 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4 !important;
+  /* padding: 20px; */
+}
+.chart-container {
+  width: 45%;
+  background: white;
+  padding: 20px;
+  margin: 10px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.charts-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.blockpara{
+  font-weight: 400;
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity, 1)) /* #1f2937 */;
+  text-align: justify;
+  font-size: 18px;
+  line-height: 1.4;
+
+}
+
+.blockquote .blockquote-lg{
+  font-weight: 600;
+  
+}
+.bg-dark{
+  background-color:#21325b;
+}
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+filter: invert(100%); 
+/* color: #21325b; */
+}
+
+/* If you want to use a custom color */
+.carousel-control-prev,
+.carousel-control-next {
+/* background-color: rgba(0, 123, 255, 0.5); Change the color */
+border-radius: 50%; /* Optional: makes it circular */
+}
+.carousel-control-prev {
+  left: -54px !important;
+}
+.carousel-control-next {
+  right: -54px !important;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+background-color: rgba(223, 228, 235, 0.4); 
+}
+
+.card-title{
+  font-size: 20px;
+}
+.ui.menu:last-child {
+  margin-left: 117px;
+}
+.fc {
+  direction: ltr;
+  text-align: left;
+  width: 400px;
+  height: 50%;
+  
+}
+.ui.menu{
+  width: 410px !important;
+}
+.ui.menu .item>.input {
+  padding: 2px 19px;
+}
+.fc-center{
+  margin:15px 0px;
+}
+
+
+.blockquote1-footer-source {
+  color: #677788;
+  font-size: .875rem;
+  font-weight: 400;
+  margin-top: .25rem;
+}
+
+.cal{
+  width: 50% !important;
+  height: 50%;
+}
+@media (min-size:769px) {
+  .blockpara{
+      font-size: 10px !important;
+  }
+}
+#map { height: 400px; width: 80%; margin: auto; }
+#search-container { margin: 20px; }
+
+
+button { padding: 10px; margin: 10px; background: blue; color: white; border: none; cursor: pointer; }
+
+/* Background Upload Styling */
+#profileCard {
+  background-size: cover;
+  background-position: center;
+  transition: background 0.3s ease-in-out;
+  padding-top: 80px;
+}
+
+.bg-upload {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.upload-label {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+font-size: 14px;
+}
+
+.profile-img {
+width: 150px;
+height: 150px;
+border-radius: 50%;
+object-fit: cover;
+}
+
+.profile-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px; /* Cube shape */
+}
+.edit-icon {
+    cursor: pointer;
+    margin-left: 10px;
+    color: #007bff;
+}
+.edit-icon:hover {
+    color: #0056b3;
+}
+.card-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem; /* Adds space between buttons */
+}
+
+.price {
+  font-size: 1.25rem; /* Adjust font size if needed */
+  color: #333; /* Customize color */
+}
+.features-list {
+  /* Adjust list formatting to make it more compact */
+  padding: 0; /* Remove default padding */
+  margin-bottom: 1rem; /* Add space below the features list */
+}
+
+.features-list ul {
+  list-style-type: none; /* Remove bullet points */
+  padding: 0; /* Remove padding for the list */
+  margin: 0; /* Remove margin */
+}
+
+.features-list li {
+  padding: 0.25rem 0; /* Add padding for a clean look */
+  border-bottom: 1px solid #ececec; /* Optional: Add a separator line */
+}
+
+/* Ensure the card body has a minimum height */
+.card-body {
+  min-height: 150px; /* Adjust this as necessary to accommodate most feature lists */
+}
+
+/* Optional: Style the h5 for price */
+.card-body h5 {
+  font-weight: bold; /* Make bold for emphasis */
+}
+
+.plan-feature-white li {
+  color: white !important;
+}
+
+
+.map-container iframe {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.accordion-item.active .accordion-header {
+  background-color: #e9f5ff;
+  border-left: 4px solid var(--bs-primary);
+}
+
+.accordion-item {
+  transition: all 0.3s ease;
+}
+.accordion-item.active {
+  box-shadow: 0 0 15px rgba(0, 123, 255, 0.15);
+}
+.accordion-button:not(.collapsed) {
+  color: #0d6efd;
+  background-color: #e7f1ff;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.125);
+}
+
+.list-group-item {
+  border-left: 4px solid #0d6efd;
+}
+
+@media only screen and (max-width: 600px) {
+  .responsive-btn{
+  margin-top: 15px;
+}
+}
+
+
+@media (max-width: 576px) {
+  .navbar-nav .nav-item a {
+    font-size: 0.75rem; /* Smaller text on mobile */
+    white-space: nowrap; /* Prevents text from wrapping unnecessarily */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adds '...' if text overflows */
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-nav .nav-item a {
+    font-size: 0.875rem; /* Slightly larger for tablets */
+  }
+}

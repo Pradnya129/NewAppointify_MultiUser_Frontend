@@ -1,0 +1,26 @@
+.btn-soft-primary {
+  background-color: #e9f0ff;
+  color: #0d6efd;
+}
+.btn-soft-primary:hover {
+  background-color: #d0e3ff;
+  color: #084298;
+}
+
+.btn-soft-danger {
+  background-color: #ffe3e3;
+  color: #dc3545;
+}
+.btn-soft-danger:hover {
+  background-color: #ffcccc;
+  color: #a71d2a;
+}
+
+.btn-soft-info {
+  background-color: #d6f4ff;
+  color: #0dcaf0;
+}
+.btn-soft-info:hover {
+  background-color: #b6ecff;
+  color: #0a95b1;
+}
