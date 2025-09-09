@@ -112,51 +112,57 @@ const Plans = () => {
   };
 
   // ✅ Save (Create or Update)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
 
-    setErrors({});
-    setSaving(true);
-    try {
-      const payload = {
-        ...form,
-        features: JSON.stringify(form.features.split(",").map((f) => f.trim())),
-      };
+  setErrors({});
+  setSaving(true);
+  try {
+  const payload = {
+  planName: form.planName,
+  monthlyPrice: Number(form.monthlyPrice),  // ensure number
+  annualPrice: Number(form.annualPrice),    // ensure number
+  renewalLimit: Number(form.renewalLimit),  // ensure number
+  features: JSON.stringify(form.features.split(",").map(f => f.trim())), // stringified array
+  description: form.description,
+};
 
-      if (form.id) {
-        await axios.patch(`${API_BASE}/${form.id}`, payload, {
-          headers: getAuthHeaders(),
-        });
-        setAlertMessage({ type: 'success', text: 'Plan updated successfully!' });
-      } else {
-        await axios.post(`${API_BASE}/add`, payload, { headers: getAuthHeaders() });
-        setAlertMessage({ type: 'success', text: 'Plan created successfully!' });
-      }
 
-      setForm({
-        id: null,
-        planName: "",
-        monthlyPrice: "",
-        annualPrice: "",
-        renewalLimit: "",
-        features: "",
-        description: "",
+    if (form.id) {
+      await axios.patch(`${API_BASE}/${form.id}`, payload, {
+        headers: getAuthHeaders(),
       });
-      setShowForm(false);
-      fetchPlans();
-    } catch (err) {
-      console.error('Error saving plan:', err);
-      setAlertMessage({ type: 'error', text: 'Failed to save plan. Please try again.' });
-    } finally {
-      setSaving(false);
+      setAlertMessage({ type: 'success', text: 'Plan updated successfully!' });
+    } else {
+      await axios.post(`${API_BASE}/add`, payload, { headers: getAuthHeaders() });
+      setAlertMessage({ type: 'success', text: 'Plan created successfully!' });
     }
-  };
+
+    setForm({
+      id: null,
+      planName: "",
+      monthlyPrice: "",
+      annualPrice: "",
+      renewalLimit: "",
+      features: "",
+      description: "",
+    });
+    setShowForm(false);
+    fetchPlans();
+  } catch (err) {
+    console.error('Error saving plan:', err.response?.data || err.message);
+    setAlertMessage({ type: 'error', text: 'Failed to save plan. Please try again.' });
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // ✅ Edit
   const handleEdit = (plan) => {
@@ -176,6 +182,7 @@ const Plans = () => {
 
     setDeleting(id);
     try {
+        console.log("Deleting plan ID:", id);
       await axios.delete(`${API_BASE}/${id}`, { headers: getAuthHeaders() });
       setPlans(plans.filter((p) => p.id !== id));
       setAlertMessage({ type: 'success', text: 'Plan deleted successfully!' });
