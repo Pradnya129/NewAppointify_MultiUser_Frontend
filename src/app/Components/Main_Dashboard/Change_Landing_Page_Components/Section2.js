@@ -167,21 +167,20 @@ const handleSave = async () => {
 
         {/* Profile Image Upload */}
         <div className="text-center mb-4">
-         <img
-    src={
-    editableData.profileImage
-      ? editableData.profileImage.startsWith('blob:')
-        ? editableData.profileImage
-        : `http://localhost:5000${editableData.profileImage}` // remove extra slash
+        <img
+  src={
+    formData.section2_Image
+      ? formData.section2_Image.startsWith('blob:')
+        ? formData.section2_Image
+        : `http://localhost:5000${formData.section2_Image}`
       : 'http://localhost:5000/assets/img/160x160/img8.jpg'
   }
+  alt="Section 2 Preview"
+  id="section2_Image"
+  className="rounded-circle border border-secondary"
+  style={{ width: "160px", height: "160px", objectFit: "cover" }}
+/>
 
-
-          alt="Section 2 Preview"
-          id="section2_Image"
-          className="rounded-circle border border-secondary"
-          style={{ width: "160px", height: "160px", objectFit: "cover" }}
-        />
 
           <div className="mt-3">
             <input
