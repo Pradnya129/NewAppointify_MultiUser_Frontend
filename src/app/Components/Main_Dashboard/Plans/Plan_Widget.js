@@ -11,7 +11,11 @@ const Plan_Widget = () => {
 
   useEffect(() => {
     // Fetch data from the backend API
-    fetch(`http://localhost:5000/api/admin/plans/all`)
+          const token = localStorage.getItem('token');
+
+           fetch(`http://localhost:5000/api/admin/plans/all`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          })
       .then((response) => response.json())
       .then((data) => {
         const totalPlans = data.length;

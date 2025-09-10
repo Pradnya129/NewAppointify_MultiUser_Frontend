@@ -155,7 +155,7 @@ const handlePlanChange = async (e) => {
         planId: selectedPlan.planId,
       }
     });
-
+   console.log("res",res)
     const buffer = res.data.bufferInMinutes;
     const shiftId = res.data.shiftId;
 

@@ -15,6 +15,7 @@ const Section3 = () => {
   const [isTaglineValid, setIsTaglineValid] = useState(true);
   const [isDescriptionValid, setIsDescriptionValid] = useState(true);
   const [isImageValid, setIsImageValid] = useState(true); // Image validation state
+  const [landingId, setLandingId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,15 +28,18 @@ const Section3 = () => {
           const adminId = decoded.id;
         const response = await fetch(`http://localhost:5000/api/landing/${adminId}`);
         const data = await response.json();
-        
-        if (data && data[0]) {
-          const section3Data = data[0];
-
+        console.log("data",data.data)
+        if (data && data.data) {
+          const section3Data = data.data;
+  setLandingId(section3Data.id);
           // Safe access with fallback default values
           setTagline(section3Data?.section3_Tagline || '');
           setDescription(section3Data?.section3_Description || '');
-          setPreviewUrl(section3Data?.section3_Image ? `https://appointify.coinagesoft.com${section3Data.section3_Image}` : '/assets/img/stethoscope.jpg');
-          setStatusMessage({ type: '', text: '' });
+ setPreviewUrl(
+            section3Data?.section3_Image
+              ? `http://localhost:5000${section3Data.section3_Image}`
+              : '/assets/img/stethoscope.jpg'
+          );          setStatusMessage({ type: '', text: '' });
         } else {
           setStatusMessage({ type: 'error', text: 'No data available for section 3' });
         }
@@ -97,7 +101,7 @@ const Section3 = () => {
 
       setLoading(true);
       const response = await axios.patch(
-       `http://localhost:5000/api/landing/${adminId}`,
+       `http://localhost:5000/api/landing/${landingId}`,
         formData,
         {
           headers: {
@@ -107,9 +111,11 @@ const Section3 = () => {
       );
 
       if (response.status === 200) {
+          setLandingId(response.data.data.id);
         setStatusMessage({ type: 'success', text: 'Section 3 updated successfully!' });
         setIsEdited(false);
       } else {
+          setLandingId(null);
         setStatusMessage({ type: 'error', text: 'Failed to update Section 3' });
       }
     } catch (error) {
