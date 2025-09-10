@@ -17,43 +17,38 @@ const Dashboard_Content = () => {
 
   const [appointmentData, setAppointmentData] = useState([]);
 
-  // ✅ Helper: Convert minutes → hh:mm
-const formatMinutesToHHMM = (minutes) => {
-  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 10000) return '0h 0m';
-  const hrs = Math.floor(minutes / 60);
-  const mins = Math.round(minutes % 60);
-  return `${hrs}h ${mins}m`;
-};
+  // Helper: Convert minutes → hh:mm
+  const formatMinutesToHHMM = (minutes) => {
+    if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 10000) return '0h 0m';
+    const hrs = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hrs}h ${mins}m`;
+  };
 
-
-useEffect(() => {
-     const token = localStorage.getItem("token");
-  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
     if (!token) return;
-  
+
     const decoded = jwtDecode(token);
-    const adminId = decoded.id; 
-  axios.get(`http://localhost:5000/api/customer-appointments/admin/${adminId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
-      },
+    const adminId = decoded.id;
+
+    axios.get(`http://localhost:5000/api/customer-appointments/admin/${adminId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     })
     .then((res) => {
-      console.log(res)
-      const appointments = res.data?.data || []; // <- inner array
+      const appointments = res.data?.data || [];
       if (appointments.length === 0) return;
 
       const monthNames = [
-        'January','February','March','April','May','June',
-        'July','August','September','October','November','December'
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
       ];
 
       const sorted = [...appointments].sort(
-        (a, b) => new Date(a.createdDate) - new Date(b.createdDate)
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
 
-      const startDate = new Date(sorted[0].createdDate);
+      const startDate = new Date(sorted[0].createdAt);
       const endDate = new Date();
 
       const monthYearMap = new Map();
@@ -75,9 +70,9 @@ useEffect(() => {
         cursor.setMonth(cursor.getMonth() + 1);
       }
 
-      // 🔥 fixed: appointments.forEach
+      // Populate monthYearMap
       appointments.forEach(item => {
-        const date = new Date(item.createdDate);
+        const date = new Date(item.createdAt);
         const key = `${monthNames[date.getMonth()]}-${date.getFullYear()}`;
         const group = monthYearMap.get(key);
         if (!group) return;
@@ -85,21 +80,26 @@ useEffect(() => {
         group.totalAppointments += 1;
 
         switch (item.appointmentStatus) {
-          case 4: group.pending += 1; break;
-          case 1: group.completed.push(item); break;
-          case 2: group.canceled += 1; break;
-          case 3: group.rescheduled += 1; break;
+          case "Pending": group.pending += 1; break;
+          case "Completed": group.completed.push(item); break;
+          case "Canceled": group.canceled += 1; break;
+          case "Rescheduled": group.rescheduled += 1; break;
+          default: break;
         }
 
-        if (item.paymentStatus === 1) {
+        if (item.paymentStatus === "Paid") {
           group.paid.push(item);
         }
       });
 
+      // Prepare table data
       const monthlyData = [];
       monthYearMap.forEach((group, key) => {
         const paidCount = group.paid.length;
-        const revenue = group.paid.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const revenue = group.paid.reduce(
+          (sum, item) => sum + parseFloat(item.amount || 0), 0
+        );
+
         const totalDuration = group.paid.reduce((sum, item) => {
           const duration = parseFloat(item.duration);
           return (Number.isFinite(duration) && duration > 0 && duration < 10000)
@@ -113,7 +113,7 @@ useEffect(() => {
 
         monthlyData.push({
           month: key,
-          revenue: `₹${revenue}`,
+          revenue: `₹${revenue.toLocaleString('en-IN')}`,
           totalAppointments: group.totalAppointments,
           pending: group.pending,
           completed: group.completed.length,
@@ -122,18 +122,26 @@ useEffect(() => {
         });
       });
 
-      // 🔥 fixed: appointments.filter
-      const paidAppointments = appointments.filter(item => item.paymentStatus === 1);
-      const totalRevenue = paidAppointments.reduce((sum, item) => sum + (item.amount || 0), 0);
-      const totalDuration = paidAppointments.reduce((sum, item) => sum + (item.duration || 0), 0);
+      // Stats for widgets
+      const paidAppointments = appointments.filter(item => item.paymentStatus === "Paid");
+      const totalRevenue = paidAppointments.reduce(
+        (sum, item) => sum + parseFloat(item.amount || 0), 0
+      );
+
+      const totalDuration = paidAppointments.reduce(
+        (sum, item) => sum + parseFloat(item.duration || 0), 0
+      );
+
       const avgDuration = paidAppointments.length > 0
         ? formatMinutesToHHMM(Math.round(totalDuration / paidAppointments.length))
         : '0h 0m';
 
       setStats({
         totalAppointments: appointments.length,
-        scheduled_rescheduledAppointment: appointments.filter(item => [0, 3].includes(item.appointmentStatus)).length,
-        completedSessions: appointments.filter(item => item.appointmentStatus === 1).length,
+        scheduled_rescheduledAppointment: appointments.filter(item =>
+          ["Pending", "Rescheduled"].includes(item.appointmentStatus)
+        ).length,
+        completedSessions: appointments.filter(item => item.appointmentStatus === "Completed").length,
         paymentReceived: totalRevenue,
         totalRevenue,
         avgDuration
@@ -144,17 +152,23 @@ useEffect(() => {
     .catch(error => {
       console.error('Failed to fetch dashboard data:', error);
     });
-}, []);
+  }, []);
 
   return (
     <div className="content-wrapper">
       <div className="container-md-xxl container-p-y responsive-container">
+        {/* Widgets */}
         <div className="row g-4 mb-4">
           {[
             { title: 'Total Appointments', icon: 'ri-calendar-check-line', color: 'primary', value: stats.totalAppointments },
             { title: 'Scheduled/Rescheduled Appointments', icon: 'ri-time-line', color: 'warning', value: stats.scheduled_rescheduledAppointment },
             { title: 'Completed Sessions', icon: 'ri-check-double-line', color: 'danger', value: stats.completedSessions },
-            { title: 'Payment Received', icon: 'ri-refresh-line', color: 'info', value: `Rs.${stats.paymentReceived}` }
+            { 
+              title: 'Payment Received', 
+              icon: 'ri-refresh-line', 
+              color: 'info', 
+              value: `₹${Number(stats.paymentReceived).toLocaleString('en-IN')}`
+            }
           ].map((item, idx) => (
             <div key={idx} className="col-sm-6 col-lg-3">
               <div className={`card card-border-shadow-${item.color} h-100`}>
@@ -205,7 +219,7 @@ useEffect(() => {
                       </tr>
                     </thead>
                     <tbody>
-                      {appointmentData.map((data, index) => (
+                      {appointmentData.length > 0 ? appointmentData.map((data, index) => (
                         <tr key={index}>
                           <td>{data.month}</td>
                           <td>{data.revenue}</td>
@@ -215,7 +229,11 @@ useEffect(() => {
                           <td>{data.canceled}</td>
                           <td>{data.avgTime}</td>
                         </tr>
-                      ))}
+                      )) : (
+                        <tr>
+                          <td colSpan="7" className="text-center text-muted">No appointment data available</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
