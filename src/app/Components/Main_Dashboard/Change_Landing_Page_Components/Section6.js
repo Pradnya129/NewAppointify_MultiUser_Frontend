@@ -14,51 +14,54 @@ const ConsultantSection6 = () => {
   const [editAnswer, setEditAnswer] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
-  const API_BASE = `https://appointify.coinagesoft.com/api/Faq`;
 
-  // Load FAQs from API on mount
-useEffect(() => {
-  const fetchFaqs = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setStatusMessage({ type: 'error', text: 'No token found. Please log in.' });
-        return;
-      }
-
-      const res = await axios.get(`http://localhost:5000/api/admin/faq`, {
-        headers: {
-          Authorization: `Bearer ${token}`,   // 👈 send token here
-        },
-      });
-
-      setFaqs(res.data);
-      setStatusMessage({ type: '', text: '' });
-    } catch (err) {
-      console.error("Error fetching FAQs:", err);
-      setStatusMessage({ type: 'error', text: 'Error fetching FAQs' });
-    }
+  // Helper function to get token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  fetchFaqs();
-}, []);
+  // Load FAQs from API on mount
+  useEffect(() => {
+    const fetchFaqs = async () => {
+      try {
+        const headers = getAuthHeaders();
+        if (!headers.Authorization) {
+          setStatusMessage({ type: 'error', text: 'No token found. Please log in.' });
+          return;
+        }
 
+        const res = await axios.get(`http://localhost:5000/api/admin/faq`, { headers });
+        setFaqs(res.data.data);
+        setStatusMessage({ type: '', text: '' });
+      } catch (err) {
+        console.error("Error fetching FAQs:", err);
+        setStatusMessage({ type: 'error', text: 'Error fetching FAQs' });
+      }
+    };
+
+    fetchFaqs();
+  }, []);
 
   const handleAddFAQ = async () => {
     if (!question.trim() || !answer.trim()) return;
 
     try {
-      const res = await axios.post(API_BASE, {
+      const headers = getAuthHeaders();
+      if (!headers.Authorization) return;
+
+      const res = await axios.post(`http://localhost:5000/api/admin/faq`, {
         question,
         answer
-      });
+      }, { headers });
+
       setFaqs([...faqs, res.data]);
       setQuestion('');
       setAnswer('');
       setStatusMessage({ type: 'success', text: 'FAQ added successfully!' });
     } catch (err) {
       console.error('Error adding FAQ:', err);
-     setStatusMessage({ type: 'error', text: 'Error adding FAQ' });
+      setStatusMessage({ type: 'error', text: 'Error adding FAQ' });
     }
   };
 
@@ -77,7 +80,10 @@ useEffect(() => {
     };
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/admin/faq/${updatedFaq.id}`, updatedFaq);
+      const headers = getAuthHeaders();
+      if (!headers.Authorization) return;
+
+      const res = await axios.put(`http://localhost:5000/api/admin/faq/${updatedFaq.id}`, updatedFaq, { headers });
       const updatedFaqs = [...faqs];
       updatedFaqs[editIndex] = res.data;
       setFaqs(updatedFaqs);
@@ -85,27 +91,29 @@ useEffect(() => {
       setStatusMessage({ type: 'success', text: 'FAQ updated successfully!' });
     } catch (err) {
       console.error('Error updating FAQ:', err);
-        setStatusMessage({ type: 'error', text: 'Error adding FAQ' });
+      setStatusMessage({ type: 'error', text: 'Error updating FAQ' });
     }
   };
 
   const handleDelete = async (index) => {
     const id = faqs[index].id;
     try {
-      await axios.delete(`${API_BASE}/${id}`);
-      setFaqs(faqs.filter((_, i) => i !== index));
-       setStatusMessage({ type: 'success', text: `FAQ index - ${index} deleted successfully!` });
+      const headers = getAuthHeaders();
+      if (!headers.Authorization) return;
 
+      await axios.delete(`http://localhost:5000/api/admin/faq/${id}`, { headers });
+      setFaqs(faqs.filter((_, i) => i !== index));
+      setStatusMessage({ type: 'success', text: `FAQ index - ${index} deleted successfully!` });
     } catch (err) {
       console.error('Error deleting FAQ:', err);
-       setStatusMessage({ type: 'error', text: 'Error adding FAQ' });
+      setStatusMessage({ type: 'error', text: 'Error deleting FAQ' });
     }
   };
 
   return (
     <div>
       <h5 className="text-start mb-3 text-muted mt-8">Section 6 - Manage FAQs</h5>
-       {statusMessage.text && (
+      {statusMessage.text && (
         <div className={`alert ${statusMessage.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
           {statusMessage.text}
         </div>

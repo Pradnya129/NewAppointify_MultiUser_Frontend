@@ -1,14 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-const API_URL = process.env.REACT_APP_API_URL;
 import { jwtDecode } from "jwt-decode";
 
 const Section5 = () => {
   const [formData, setFormData] = useState({
     tagline: '',
     mainDescription: '',
-    // mainHeading: '',
+    mainHeading: '',
   });
 
   const [editedData, setEditedData] = useState({ ...formData });
@@ -18,41 +17,49 @@ const Section5 = () => {
 
   const [isTaglineValid, setIsTaglineValid] = useState(true);
   const [isDescriptionValid, setIsDescriptionValid] = useState(true);
-  // const [isHeadingValid, setIsHeadingValid] = useState(true);
 
   // Fetch Section 5 data on mount
-  useEffect(() => {
-       const token = localStorage.getItem("token");
-        
-          if (!token) return;
-        
-          const decoded = jwtDecode(token);
-          const adminId = decoded.id;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
-        setFormData(res.data);
-        setEditedData(res.data);
-        setStatusMessage({ type: '', text: '' });
-      } catch (err) {
-        setStatusMessage({ type: 'error', text: 'Failed to fetch section content.' });
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  const decoded = jwtDecode(token);
+  const adminId = decoded.id;
 
-    fetchData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
+      const data = res.data.data;
+
+      const mappedData = {
+        id: data.id, // add landing page ID here
+        tagline: data.tagline3 || '',
+        mainDescription: data.section5_MainDescription || '',
+      };
+
+      setFormData(mappedData);
+      setEditedData(mappedData);
+      setStatusMessage({ type: '', text: '' });
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: 'Failed to fetch section content.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+;
 
   // Detect form changes
-  useEffect(() => {
-    const hasChanges =
-      editedData.tagline !== formData.tagline ||
-      editedData.mainDescription !== formData.mainDescription ||
-      editedData.mainHeading !== formData.mainHeading;
-    setIsEdited(hasChanges);
-  }, [editedData, formData]);
+useEffect(() => {
+  const hasChanges =
+    editedData?.tagline !== formData?.tagline ||
+    editedData?.mainDescription !== formData?.mainDescription ||
+    editedData?.mainHeading !== formData?.mainHeading;
+  setIsEdited(hasChanges);
+}, [editedData, formData]);
+
 
   // Handle input change
   const handleChange = (field, value) => {
@@ -66,49 +73,52 @@ const Section5 = () => {
     if (!editedData.tagline.trim()) {
       setIsTaglineValid(false);
       isValid = false;
-    } else {
-      setIsTaglineValid(true);
-    }
+    } else setIsTaglineValid(true);
 
     if (!editedData.mainDescription.trim()) {
       setIsDescriptionValid(false);
       isValid = false;
-    } else {
-      setIsDescriptionValid(true);
-    }
-
-    // if (!editedData.mainHeading.trim()) {
-    //   setIsHeadingValid(false);
-    //   isValid = false;
-    // } else {
-    //   setIsHeadingValid(true);
-    // }
+    } else setIsDescriptionValid(true);
 
     return isValid;
   };
 
-  // Handle Save
-  const handleSave = async () => {
-    if (!validateFields()) return;  // Prevent save if validation fails
+const handleSave = async () => {
+  if (!validateFields()) return;
 
-    try {
-         const token = localStorage.getItem("token");
-        
-          if (!token) return;
-        
-          const decoded = jwtDecode(token);
-          const adminId = decoded.id;
-      setLoading(true);
-      await axios.put(`http://localhost:5000/api/landing/${adminId}`, editedData);
-      setFormData(editedData);
-      setIsEdited(false);
-      setStatusMessage({ type: 'success', text: 'Section 5 updated successfully!' });
-    } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Failed to update section.' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLoading(true);
+
+    const landingPageId = editedData.id; // Use landing page ID here
+
+    // Create FormData
+    const formDataPayload = new FormData();
+    formDataPayload.append("tagline3", editedData.tagline);
+    formDataPayload.append("section5_MainDescription", editedData.mainDescription);
+
+    await axios.patch(`http://localhost:5000/api/landing/${landingPageId}`, formDataPayload, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    // Update local state
+    setFormData({ ...editedData });
+    setIsEdited(false);
+    setStatusMessage({ type: 'success', text: 'Section 5 updated successfully!' });
+  } catch (err) {
+    console.error(err);
+    setStatusMessage({ type: 'error', text: 'Failed to update section.' });
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   // Handle Reset
   const handleReset = () => {
@@ -133,7 +143,7 @@ const Section5 = () => {
           <input
             type="text"
             className={`form-control ${!isTaglineValid ? 'is-invalid' : ''}`}
-           value={editedData?.tagline || ''}
+            value={editedData?.tagline || ''}
             disabled={loading}
             onChange={e => handleChange('tagline', e.target.value)}
           />
@@ -152,17 +162,7 @@ const Section5 = () => {
           {!isDescriptionValid && <div className="invalid-feedback">Description cannot be empty.</div>}
         </div>
 
-        {/* <div className="mb-3">
-          <label className="form-label fw-semibold">Heading</label>
-          <input
-            type="text"
-            className={`form-control ${!isHeadingValid ? 'is-invalid' : ''}`}
-            value={editedData.mainHeading}
-            disabled={loading}
-            onChange={e => handleChange('mainHeading', e.target.value)}
-          />
-          {!isHeadingValid && <div className="invalid-feedback">Heading cannot be empty.</div>}
-        </div> */}
+      
 
         <div className="d-flex justify-content-end gap-2 mt-4">
           <button

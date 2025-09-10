@@ -9,69 +9,65 @@ const Section7 = () => {
   const [savedUrl, setSavedUrl] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
+  const [landingId, setLandingId] = useState('');
+
 
   // Fetch iframe URL
-  const fetchIframeUrl = async () => {
-    try {
-         const token = localStorage.getItem("token");
-        
-          if (!token) return;
-        
-          const decoded = jwtDecode(token);
-          const adminId = decoded.id;
-      const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
-      const fetchedUrl = res.data.data?.iFrameURL;
-      console.log('fetched url -', fetchedUrl);
+const fetchIframeUrl = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      if (fetchedUrl) {
-        setSavedUrl(fetchedUrl);
-        setIframeUrl(fetchedUrl);
-      } else {
-        setSavedUrl('');
-        setIframeUrl('');
-      }
-    } catch (err) {
-      console.error('Error fetching iframe URL:', err);
-      setStatusMessage({ type: 'error', text: 'Failed to fetch map URL.' });
-    }
-  };
+    const decoded = jwtDecode(token);
+    const adminId = decoded.id;
+
+    const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
+    const data = res.data.data;
+
+    setLandingId(data.id); // ✅ store landing page ID
+    setSavedUrl(data.locationIframeURL || '');
+    setIframeUrl(data.locationIframeURL || '');
+  } catch (err) {
+    console.error('Error fetching iframe URL:', err);
+    setStatusMessage({ type: 'error', text: 'Failed to fetch map URL.' });
+  }
+};
+
 
   useEffect(() => {
     fetchIframeUrl();
   }, []);
 
-  // Save iframe URL
-  const handleSave = async () => {
-    const trimmedUrl = iframeUrl.trim();
-    if (!trimmedUrl) return;
+const handleSave = async () => {
+  const token = localStorage.getItem("token");
+  if (!token || !landingId) return;
 
-    console.log('Saving raw string payload:', trimmedUrl);
+  const trimmedUrl = iframeUrl.trim();
+  if (!trimmedUrl) return;
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/landing/${adminId}`,
-        JSON.stringify(trimmedUrl), 
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+  try {
+    await axios.patch(
+      `http://localhost:5000/api/landing/${landingId}`,
+      JSON.stringify({ locationIframeURL: trimmedUrl }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-      );
-
-      setStatusMessage({ type: 'success', text: 'Map URL updated successfully!' });
-      setIsEditMode(false);
-      fetchIframeUrl();
-    } catch (err) {
-      console.error('Save failed:', err.response?.data || err.message || err);
-      if (err.response?.data?.errors) {
-        console.table(err.response.data.errors);
       }
-      setStatusMessage({
-        type: 'error',
-        text: err.response?.data?.title || 'Failed to save map URL.',
-      });
-    }
-  };
+    );
+
+    setStatusMessage({ type: 'success', text: 'Map URL updated successfully!' });
+    setIsEditMode(false);
+    fetchIframeUrl();
+  } catch (err) {
+    console.error('Save failed:', err.response?.data || err.message || err);
+    setStatusMessage({ type: 'error', text: 'Failed to save map URL.' });
+  }
+};
+
+
+
 
   // Delete iframe URL
   const handleDelete = async () => {

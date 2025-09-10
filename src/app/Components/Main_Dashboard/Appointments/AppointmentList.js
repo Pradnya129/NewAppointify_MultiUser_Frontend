@@ -38,7 +38,7 @@ const AppointmentList = () => {
       },
     })
       .then(response => {
-        // console.log(response,adminId)
+        console.log("appo",response,adminId)
         const sortedAppointments = [...response.data.data].sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
           setAppointments(sortedAppointments);
 
@@ -48,7 +48,7 @@ const AppointmentList = () => {
       .catch(error => {
         console.error('Error fetching appointments:', error);
       });
-  }, [appointments]);
+  }, []);
 
 function downloadPdf(base64Pdf) {
   const byteCharacters = atob(base64Pdf);
@@ -420,10 +420,10 @@ const getAppointmentBadgeColor = (status) => {
                   <div className="mb-3">
                     <label className="form-label">Payment Status</label>
                     <select className="form-select" name="paymentStatus" value={selectedAppt.paymentStatus} onChange={handleInputChange}>
-                      <option value={0}>Pending</option>
-                      <option value={1}>Paid</option>
-                      <option value={2}>Failed</option>
-                      <option value={3}>Refunded</option>
+                      <option value={"Pending"}>Pending</option>
+                      <option value={"Paid"}>Paid</option>
+                      <option value={"Failed"}>Failed</option>
+                      <option value={"Refunded"}>Refunded</option>
                     </select>
                   </div>
 

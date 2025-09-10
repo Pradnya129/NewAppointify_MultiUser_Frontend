@@ -25,6 +25,7 @@ const Plan_List = () => {
   const [errors, setErrors] = useState({});
   const editorRef = useRef(null);
 
+  
 useEffect(() => {
   const fetchPlans = async () => {
     const token = localStorage.getItem('token');
@@ -44,23 +45,24 @@ useEffect(() => {
       const plansData = await plansRes.json();
       const shiftData = await shiftsRes.json();
 
-      setPlans(plansData || []);
-      setShiftList(shiftData || []);
-
+      setPlans(plansData);
+      setShiftList(shiftData);
+      console.log("shftlist",shiftList)
       const bufferMap = {};
       for (const plan of plansData) {
         try {
           const bufferRes = await axios.get(
-            `http://localhost:5000/api/plan-shift-buffer-rule/all`,
+            `http://localhost:5000/api/plan-shift-buffer-rule/${plan.planId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
               params: { planId: plan.planId }
             }
           );
           // Take first rule if multiple returned
-          bufferMap[plan.planId] = bufferRes.data.rules[0]?.bufferInMinutes ?? 0;
-          console.log("buffer",bufferRes.data.rules[0])
+          bufferMap[plan.planId] = bufferRes.data?.bufferInMinutes ?? 0;
+          console.log("buffer",bufferRes.data)
           console.log( bufferMap[plan.planId])
+          console.log("shiftList",shiftList)
         } catch {
           bufferMap[plan.planId] = 0;
         }
@@ -303,11 +305,12 @@ console.log("existingRule",existingRule)
                   </div>
                 </div>
                 <div className="card-body d-flex flex-column align-items-center py-0">
-                  <p>
+      <p>
   {plan.shiftId
     ? shiftList.find(s => String(s.id) === String(plan.shiftId))?.name ?? 'None'
     : 'None'}
 </p>
+
 <p>Buffer: {bufferRules[plan.planId] ?? '—'} min</p>
 
                 </div>
