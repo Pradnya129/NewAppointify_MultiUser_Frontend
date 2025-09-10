@@ -22,6 +22,16 @@ const Plans = () => {
     features: "",
     description: "",
   });
+  const [admins, setAdmins] = useState([]);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [assignForm, setAssignForm] = useState({
+    adminId: "",
+    startDate: "",
+    endDate: "",
+    paymentStatus: "Paid",
+  });
+  const [assignErrors, setAssignErrors] = useState({});
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -44,13 +54,33 @@ const Plans = () => {
     }
   };
 
+  // ✅ Fetch admins
+  const fetchAdmins = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/superadmin/manageAdmins/`, { headers: getAuthHeaders() });
+      setAdmins(res.data || []);
+    } catch (err) {
+      console.error('Error fetching admins:', err);
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       setLoading(false);
       return;
     }
     fetchPlans();
+    fetchAdmins();
   }, [token]);
+  
+  // Update assignForm when selectedPlan changes to prefill adminId if assigned
+  useEffect(() => {
+    if (selectedPlan && selectedPlan.assignedAdminId) {
+      setAssignForm((prev) => ({ ...prev, adminId: selectedPlan.assignedAdminId }));
+    } else {
+      setAssignForm((prev) => ({ ...prev, adminId: "" }));
+    }
+  }, [selectedPlan]);
 
   // Auto-hide alert messages after 5 seconds
   useEffect(() => {
@@ -216,6 +246,65 @@ const handleSubmit = async (e) => {
     } catch {
       return [];
     }
+  };
+
+  // ✅ Handle assign form change
+  const handleAssignChange = (e) => {
+    setAssignForm({ ...assignForm, [e.target.name]: e.target.value });
+  };
+
+  // ✅ Validate assign form
+  const validateAssignForm = () => {
+    const errors = {};
+    if (!assignForm.adminId) errors.adminId = 'Please select an admin';
+    if (!assignForm.startDate) errors.startDate = 'Start date is required';
+    if (!assignForm.endDate) errors.endDate = 'End date is required';
+    if (assignForm.startDate && assignForm.endDate && new Date(assignForm.startDate) >= new Date(assignForm.endDate)) {
+      errors.endDate = 'End date must be after start date';
+    }
+    return errors;
+  };
+
+  // ✅ Handle assign
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    const errors = validateAssignForm();
+    if (Object.keys(errors).length > 0) {
+      setAssignErrors(errors);
+      return;
+    }
+    setAssignErrors({});
+    setSaving(true);
+    try {
+      const payload = {
+        adminId: assignForm.adminId,
+        subscriptionPlanId: selectedPlan.id,
+        startDate: assignForm.startDate,
+        endDate: assignForm.endDate,
+        paymentStatus: assignForm.paymentStatus,
+      };
+      await axios.post(`${API_BASE}/subscriptions/add`, payload, { headers: getAuthHeaders() });
+      setAlertMessage({ type: 'success', text: 'Subscription assigned successfully!' });
+      setShowAssignModal(false);
+      setAssignForm({
+        adminId: "",
+        startDate: "",
+        endDate: "",
+        paymentStatus: "Paid",
+      });
+    } catch (err) {
+      console.error('Error assigning subscription:', err);
+      setAlertMessage({ type: 'error', text: 'Failed to assign subscription. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ✅ Open assign modal
+  const openAssignModal = (plan) => {
+    setSelectedPlan(plan);
+    setShowAssignModal(true);
+    setAssignErrors({});
   };
 
   return (
@@ -400,7 +489,7 @@ const handleSubmit = async (e) => {
                   <td>{parseFeatures(p.features).join(", ")}</td>
                   <td>{p.description}</td>
                   <td>
-                    <div className="d-flex gap-2">
+                    <div className="d-flex gap-2 align-items-center">
                       <button
                         className="btn btn-sm btn-outline-primary"
                         onClick={() => handleEdit(p)}
@@ -409,12 +498,22 @@ const handleSubmit = async (e) => {
                         <FaEdit />
                       </button>
                       <button
+                        className="btn btn-sm btn-outline-success"
+                        onClick={() => openAssignModal(p)}
+                        disabled={saving || deleting === p.id}
+                      >
+                        <FaCrown />
+                      </button>
+                      <button
                         className="btn btn-sm btn-outline-danger"
                         onClick={() => handleDelete(p.id)}
                         disabled={saving || deleting === p.id}
                       >
                         {deleting === p.id ? <FaSpinner className="fa-spin" /> : <FaTrash />}
                       </button>
+                      {p.assignedAdminName && (
+                        <small className="text-muted ms-2">Assigned to: {p.assignedAdminName}</small>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -438,6 +537,13 @@ const handleSubmit = async (e) => {
                     disabled={saving || deleting === p.id}
                   >
                     <FaEdit />
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-success"
+                    onClick={() => openAssignModal(p)}
+                    disabled={saving || deleting === p.id}
+                  >
+                    <FaCrown />
                   </button>
                   <button
                     className="btn btn-sm btn-outline-danger"
@@ -470,9 +576,100 @@ const handleSubmit = async (e) => {
                   <small className="text-muted">Description</small>
                   <div>{p.description}</div>
                 </div>
+                {p.assignedAdminName && (
+                  <div className="col-12">
+                    <small className="text-muted">Assigned to</small>
+                    <div className="text-primary fw-bold">{p.assignedAdminName}</div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Assign Modal */}
+      {showAssignModal && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Assign Subscription Plan</h5>
+                <button type="button" className="btn-close" onClick={() => setShowAssignModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                {selectedPlan && (
+                  <div className="mb-3">
+                    <h6>Selected Plan: <span className="text-primary">{selectedPlan.planName}</span></h6>
+                    <p className="text-muted">{selectedPlan.description}</p>
+                  </div>
+                )}
+                <form onSubmit={handleAssign}>
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Select Admin</label>
+                      <select
+                        name="adminId"
+                        className={`form-select ${assignErrors.adminId ? 'is-invalid' : ''}`}
+                        value={assignForm.adminId}
+                        onChange={handleAssignChange}
+                      >
+                        <option value="">Choose an admin...</option>
+                        {admins.map((admin) => (
+                          <option key={admin.id} value={admin.id} selected={selectedPlan.assignedAdminId === admin.id}>
+                            {admin.name} ({admin.email})
+                          </option>
+                        ))}
+                      </select>
+                      {assignErrors.adminId && <div className="invalid-feedback">{assignErrors.adminId}</div>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Payment Status</label>
+                      <select
+                        name="paymentStatus"
+                        className="form-select"
+                        value={assignForm.paymentStatus}
+                        onChange={handleAssignChange}
+                      >
+                        <option value="Paid">Paid</option>
+                        <option value="Pending">Pending</option>
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Start Date</label>
+                      <input
+                        type="date"
+                        name="startDate"
+                        className={`form-control ${assignErrors.startDate ? 'is-invalid' : ''}`}
+                        value={assignForm.startDate}
+                        onChange={handleAssignChange}
+                      />
+                      {assignErrors.startDate && <div className="invalid-feedback">{assignErrors.startDate}</div>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">End Date</label>
+                      <input
+                        type="date"
+                        name="endDate"
+                        className={`form-control ${assignErrors.endDate ? 'is-invalid' : ''}`}
+                        value={assignForm.endDate}
+                        onChange={handleAssignChange}
+                      />
+                      {assignErrors.endDate && <div className="invalid-feedback">{assignErrors.endDate}</div>}
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2 mt-3">
+                    <button type="submit" className="btn btn-success" disabled={saving}>
+                      {saving ? <><FaSpinner className="fa-spin me-2" />Assigning...</> : <><FaCrown className="me-1" />Assign Subscription</>}
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAssignModal(false)} disabled={saving}>
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
