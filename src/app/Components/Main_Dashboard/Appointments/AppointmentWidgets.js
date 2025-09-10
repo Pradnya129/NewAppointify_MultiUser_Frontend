@@ -2,17 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { jwtDecode } from "jwt-decode";
-
 import {
   faCalendarAlt,
   faCheckDouble,
   faBan,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
-const API_URL = process.env.REACT_APP_API_URL;
+
 const AppointmentWidgets = () => {
+  const [appointment,setAppointments]=useState()
   const [widgetData, setWidgetData] = useState([
-    // Initialize counts as zero, labels and icons stay the same
     {
       count: 0,
       change: '',
@@ -48,40 +47,57 @@ const AppointmentWidgets = () => {
   ]);
 
   useEffect(() => {
-        const token = localStorage.getItem("token");
-    
-      if (!token) return;
-    
-      const decoded = jwtDecode(token);
-      const adminId = decoded.id; 
-    fetch(`http://localhost:5000/api/customer-appointments/admin/${adminId}`) // Your API endpoint
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const decoded = jwtDecode(token);
+    const adminId = decoded.id;
+
+    fetch(`http://localhost:5000/api/customer-appointments/admin/${adminId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
       .then((appointments) => {
+        setAppointments(appointment)
         const today = new Date();
+        
+        if (!appointments?.data) return;
 
-        // Filter logic (adjust these according to your data and business rules):
+        // ✅ Upcoming
         const upcomingCount = appointments.data.filter((appt) => {
-  const apptDate = new Date(appt.appointmentDate);
-  return apptDate >= today && (appt.appointmentStatus === 0 || appt.appointmentStatus === 3);
-}).length;
+          const apptDate = new Date(appt.appointmentDate);
+          console.log(appointments)
+          return (
+            apptDate >= today &&
+            (appt.appointmentStatus === "Scheduled" ||
+             appt.appointmentStatus === "Rescheduled")
+          );
+        }).length;
 
-
+        // ✅ Completed
         const completedCount = appointments.data.filter(
-          (appt) => appt.appointmentStatus === 1
+          (appt) =>
+            appt.appointmentStatus === "Completed" || appt.appointmentStatus === 1
         ).length;
 
+        // ✅ Cancelled
         const cancelledCount = appointments.data.filter(
-          (appt) => appt.appointmentStatus === 2
+          (appt) =>
+            appt.appointmentStatus === "Cancelled" || appt.appointmentStatus === 2
         ).length;
 
+        // ✅ Failed Transactions
         const failedCount = appointments.data.filter(
-          (appt) => appt.paymentStatus === 2
+          (appt) =>
+            appt.paymentStatus === "Failed" || appt.paymentStatus === 2
         ).length;
 
         setWidgetData([
           {
             count: upcomingCount,
-            change: '', // You can calculate percentage change if you want
+            change: '',
             label: 'Upcoming Appointments',
             subLabel: 'Scheduled visits',
             icon: faCalendarAlt,
@@ -116,7 +132,7 @@ const AppointmentWidgets = () => {
       .catch((error) => {
         console.error('Error fetching appointments:', error);
       });
-  }, []);
+  }, [appointment]);
 
   return (
     <div className="row g-4 mb-4">

@@ -95,7 +95,7 @@ const UsersList = () => {
       );
 
       if (response.ok) {
-        alert("Patient updated successfully");
+        alert("User updated successfully");
         handleCloseModal();
         fetchPatients();
       } else {
@@ -122,7 +122,7 @@ const UsersList = () => {
         );
 
         if (res.ok) {
-          alert("Patient deleted successfully");
+          alert("User deleted successfully");
           fetchPatients();
         } else {
           console.log(clientId);
