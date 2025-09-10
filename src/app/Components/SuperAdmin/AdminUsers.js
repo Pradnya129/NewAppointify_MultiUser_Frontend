@@ -126,7 +126,7 @@ setUsers(users.map((u) => (u.id === selectedUser.id ? res.data.admin : u)));
   return (
     <div className="card p-3 rounded-4 mt-5">
       <div className="card-header border-bottom mb-3">
-        <h5 className="mb-0">IT Users</h5>
+        <h5 className="mb-0"> Total Users</h5>
       </div>
 
       {/* Alert Messages */}
