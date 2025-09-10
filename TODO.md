@@ -9,7 +9,7 @@ Create a new subscription assigned page in the admin dashboard to display the as
 - [x] Design UI to display subscription details (plan name, prices, dates, etc.)
 - [x] Add menu item in Sidebar.js for admin role to access the subscription assigned page
 - [x] Create the page route under src/app/Dashboard/SubscriptionAssigned/page.js
-- [ ] Test the page rendering and API integration
+- [x] Test the page rendering and API integration
 
 ## Dependent Files
 - src/app/Components/Main_Dashboard/Subscription/SubscriptionAssigned.js (new)
