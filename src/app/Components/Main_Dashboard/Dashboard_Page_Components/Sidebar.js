@@ -185,10 +185,17 @@ const Sidebar = ({ mobileSidebarVisible, setMobileSidebarVisible }) => {
                 <div>Users</div>
               </Link>
             </li>
-               <li className="menu-item">
-              <Link href="/Dashboard/Renewal" className={`menu-link ${pathname === '/Dashboard/Appointments' ? 'active' : ''}`}>
+            <li className="menu-item">
+              <Link href="/Dashboard/Renewal" className={`menu-link ${pathname === '/Dashboard/Renewal' ? 'active' : ''}`}>
                 <i className="menu-icon tf-icons ri-calendar-check-line me-2"></i>
                 <div>Renewals</div>
+              </Link>
+            </li>
+
+            <li className="menu-item">
+              <Link href="/Dashboard/SubscriptionAssigned" className={`menu-link ${pathname === '/Dashboard/SubscriptionAssigned' ? 'active' : ''}`}>
+                <i className="menu-icon tf-icons ri-crown-line me-2"></i>
+                <div>My Subscription</div>
               </Link>
             </li>
 
