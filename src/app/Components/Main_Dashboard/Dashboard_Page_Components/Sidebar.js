@@ -194,7 +194,7 @@ const Sidebar = ({ mobileSidebarVisible, setMobileSidebarVisible }) => {
 
             <li className="menu-item">
               <Link href="/Dashboard/SubscriptionAssigned" className={`menu-link ${pathname === '/Dashboard/SubscriptionAssigned' ? 'active' : ''}`}>
-                <i className="menu-icon tf-icons ri-crown-line me-2"></i>
+                <i className="menu-icon tf-icons ri-file-text-line me-2"></i>
                 <div>My Subscription</div>
               </Link>
             </li>

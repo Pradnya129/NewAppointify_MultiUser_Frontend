@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-const Navbar = () => {
+const Navbar = ({ onToggleSidebar }) => {
   const router = useRouter();
   const handleLogOut=()=>{
     localStorage.removeItem('token');
@@ -25,7 +25,7 @@ useEffect(() => {
               id="layout-navbar"
             >
               <div className="layout-menu-toggle layout-menu navbar-nav flex align-items-xl-center  me-xl-0 d-xl-none" id="layout-menu">
-                <a className="nav-item nav-link px-0 me-xl-6 ms-0" href="#">
+                <a className="nav-item nav-link px-0 me-xl-6 ms-0" href="#" onClick={(e) => { e.preventDefault(); onToggleSidebar(); }}>
                   <i className="ri-menu-fill ri-22px"></i>
                 </a>
               </div>
