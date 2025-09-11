@@ -1,22 +1,14 @@
-# TODO: Create Subscription Assigned Page for Admin
+# TODO List for Updating Landing Page Plans API
 
-## Plan Overview
-Create a new subscription assigned page in the admin dashboard to display the assigned plan by the superadmin to the admin. This page will fetch subscription details from the API and display them.
+## Completed Tasks
+- [x] Updated fetchPlans function in src/app/Components/LandingPageComponents/Plans.js to use http://localhost:5000/api/admin/plans/all with Bearer token
+- [x] Added fetch for http://localhost:5000/api/admin/shift with Bearer token
+- [x] Added shifts state to store shift data
+- [x] Ensured error handling for both API calls
+- [x] Used Promise.all for concurrent fetching
 
-## Steps
-- [x] Create SubscriptionAssigned.js component in src/app/Components/Main_Dashboard/Subscription/
-- [x] Implement API call to fetch subscription details using the provided endpoint
-- [x] Design UI to display subscription details (plan name, prices, dates, etc.)
-- [x] Add menu item in Sidebar.js for admin role to access the subscription assigned page
-- [x] Create the page route under src/app/Dashboard/SubscriptionAssigned/page.js
-- [x] Test the page rendering and API integration
-
-## Dependent Files
-- src/app/Components/Main_Dashboard/Subscription/SubscriptionAssigned.js (new)
-- src/app/Components/Main_Dashboard/Dashboard_Page_Components/Sidebar.js (edit)
-- src/app/Dashboard/SubscriptionAssigned/page.js (new)
-
-## Followup Steps
-- Verify API integration works correctly
-- Ensure proper error handling and loading states
-- Test navigation from sidebar menu
+## Pending Tasks
+- [ ] Test the component in the browser to ensure plans load correctly from the new API
+- [ ] Verify that the token is available in the landing page context (user must be logged in)
+- [ ] Check if shift data needs to be displayed or used in the UI
+- [ ] Handle cases where token is not available (e.g., redirect to login or show public plans)
