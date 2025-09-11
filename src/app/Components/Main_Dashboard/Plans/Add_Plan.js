@@ -71,15 +71,19 @@ const Add_Plan = () => {
   e.preventDefault();
   if (!validateForm()) return;
 
-  const htmlContent = editorRef.current?.innerHTML || '';
   const token = localStorage.getItem('token');
+const listItems = Array.from(editorRef.current.querySelectorAll("li"))
+  .map(el => el.innerText.trim())
+  .filter(text => text.length > 0);
+
+
 
   const planData = {
     planName: formData.planName,
     planPrice: parseFloat(formData.planPrice),
     planDuration: formData.planDuration,
     planDescription: formData.planDescription,
-    planFeatures: htmlContent,
+    planFeatures: listItems,
     shiftId: selectedShift?.id || null
   };
 
