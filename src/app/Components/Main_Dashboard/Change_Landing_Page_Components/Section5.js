@@ -5,9 +5,9 @@ import { jwtDecode } from "jwt-decode";
 
 const Section5 = () => {
   const [formData, setFormData] = useState({
-    tagline: '',
-    mainDescription: '',
-    mainHeading: '',
+    section5_Tagline: '',
+    section5_MainHeading: '',
+    section5_MainDescription: '',
   });
 
   const [editedData, setEditedData] = useState({ ...formData });
@@ -19,44 +19,45 @@ const Section5 = () => {
   const [isDescriptionValid, setIsDescriptionValid] = useState(true);
 
   // Fetch Section 5 data on mount
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  const decoded = jwtDecode(token);
-  const adminId = decoded.id;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const decoded = jwtDecode(token);
+    const adminId = decoded.id;
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
-      const data = res.data.data;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
+        const data = res.data.data;
 
-      const mappedData = {
-        id: data.id, // add landing page ID here
-        tagline: data.tagline3 || '',
-        mainDescription: data.section5_MainDescription || '',
-      };
+        const mappedData = {
+          id: data.id, // add landing page ID here
+          section5_Tagline: data.section5_Tagline || '',
+          section5_MainDescription: data.section5_MainDescription || '',
+          section5_MainHeading: data.section5_MainHeading || '',
+        };
 
-      setFormData(mappedData);
-      setEditedData(mappedData);
-      setStatusMessage({ type: '', text: '' });
-    } catch (err) {
-      setStatusMessage({ type: 'error', text: 'Failed to fetch section content.' });
-    } finally {
-      setLoading(false);
-    }
-  };
+        setFormData(mappedData);
+        setEditedData(mappedData);
+        setStatusMessage({ type: '', text: '' });
+      } catch (err) {
+        setStatusMessage({ type: 'error', text: 'Failed to fetch section content.' });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 ;
 
   // Detect form changes
 useEffect(() => {
   const hasChanges =
-    editedData?.tagline !== formData?.tagline ||
-    editedData?.mainDescription !== formData?.mainDescription ||
-    editedData?.mainHeading !== formData?.mainHeading;
+    editedData?.section5_Tagline !== formData?.section5_Tagline ||
+    editedData?.section5_MainDescription !== formData?.section5_MainDescription ||
+    editedData?.section5_MainHeading !== formData?.section5_MainHeading;
   setIsEdited(hasChanges);
 }, [editedData, formData]);
 
@@ -70,12 +71,12 @@ useEffect(() => {
   const validateFields = () => {
     let isValid = true;
 
-    if (!editedData.tagline.trim()) {
+    if (!editedData.section5_Tagline.trim()) {
       setIsTaglineValid(false);
       isValid = false;
     } else setIsTaglineValid(true);
 
-    if (!editedData.mainDescription.trim()) {
+    if (!editedData.section5_MainDescription.trim()) {
       setIsDescriptionValid(false);
       isValid = false;
     } else setIsDescriptionValid(true);
@@ -96,8 +97,9 @@ const handleSave = async () => {
 
     // Create FormData
     const formDataPayload = new FormData();
-    formDataPayload.append("tagline3", editedData.tagline);
-    formDataPayload.append("section5_MainDescription", editedData.mainDescription);
+    formDataPayload.append("section5_Tagline", editedData.section5_Tagline);
+    formDataPayload.append("section5_MainDescription", editedData.section5_MainDescription);
+    formDataPayload.append("section5_MainHeading", editedData.section5_MainHeading);
 
     await axios.patch(`http://localhost:5000/api/landing/${landingPageId}`, formDataPayload, {
       headers: {
@@ -143,11 +145,22 @@ const handleSave = async () => {
           <input
             type="text"
             className={`form-control ${!isTaglineValid ? 'is-invalid' : ''}`}
-            value={editedData?.tagline || ''}
+            value={editedData?.section5_Tagline || ''}
             disabled={loading}
-            onChange={e => handleChange('tagline', e.target.value)}
+            onChange={e => handleChange('section5_Tagline', e.target.value)}
           />
           {!isTaglineValid && <div className="invalid-feedback">Tagline cannot be empty.</div>}
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label fw-semibold">Main Heading</label>
+          <input
+            type="text"
+            className="form-control"
+            value={editedData?.section5_MainHeading || ''}
+            disabled={loading}
+            onChange={e => handleChange('section5_MainHeading', e.target.value)}
+          />
         </div>
 
         <div className="mb-3">
@@ -155,9 +168,9 @@ const handleSave = async () => {
           <textarea
             rows="4"
             className={`form-control ${!isDescriptionValid ? 'is-invalid' : ''}`}
-            value={editedData.mainDescription || ''}
+            value={editedData.section5_MainDescription || ''}
             disabled={loading}
-            onChange={e => handleChange('mainDescription', e.target.value)}
+            onChange={e => handleChange('section5_MainDescription', e.target.value)}
           />
           {!isDescriptionValid && <div className="invalid-feedback">Description cannot be empty.</div>}
         </div>

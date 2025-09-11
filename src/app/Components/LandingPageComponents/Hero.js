@@ -19,10 +19,12 @@ const Hero = ({ scrollToSectionHeader }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://appointify.coinagesoft.com/api/ConsultantProfile/getConsultantProfile`);
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('adminId') || '67adc6aa-6fac-4c37-9f00-632bf483b916';
+        const response = await fetch(`http://localhost:5000/api/landing/${adminId}`);
         if (!response.ok) throw new Error("Failed to fetch consultant data");
         const result = await response.json();
-        const data = result[0];
+        const data = result.data;
         setConsultantData(data);
         setTaglines([data.tagline1, data.tagline2, data.tagline3]);
       } catch (error) {
@@ -101,7 +103,7 @@ const Hero = ({ scrollToSectionHeader }) => {
                             className="avatar-img rounded-pill"
                             src={
                               consultantData.profileImage
-                                  ?  `https://appointify.coinagesoft.com/${consultantData.profileImage}`
+                                  ?  `http://localhost:5000/${consultantData.profileImage}`
                                 : '/assets/img/160x160/img6.jpg'
                             }
                             alt="Doctor"

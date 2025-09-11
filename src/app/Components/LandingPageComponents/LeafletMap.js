@@ -7,11 +7,13 @@ const LeafletMap = () => {
   useEffect(() => {
     const fetchIframeUrl = async () => {
       try {
-        const res = await axios.get('https://appointify.coinagesoft.com/api/Location');
-        console.log("res iframeurl", res.data.data.iFrameURL);
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('adminId') || '67adc6aa-6fac-4c37-9f00-632bf483b916';
+        const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
+        console.log("res iframeurl", res.data.data.locationIframeURL);
 
-        if (res.data.data?.iFrameURL) {
-          setIframeUrl(res.data.data.iFrameURL); // ✅ use directly
+        if (res.data.data?.locationIframeURL) {
+          setIframeUrl(res.data.data.locationIframeURL);
         } else {
           console.warn("No iframe URL found in response");
         }

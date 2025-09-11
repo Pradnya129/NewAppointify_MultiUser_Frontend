@@ -17,10 +17,17 @@ const Plans = React.forwardRef((props, ref) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`https://appointify.coinagesoft.com/api/Section5`);
-        setFormData(res.data);
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('adminId') || '67adc6aa-6fac-4c37-9f00-632bf483b916';
+        const res = await axios.get(`http://localhost:5000/api/landing/${adminId}`);
+        const data = res.data.data;
+        setFormData({
+          tagline: data.section5_Tagline || '',
+          mainDescription: data.section5_MainDescription || '',
+          mainHeading: data.section5_MainHeading || '',
+        });
       } catch (error) {
-        console.error("Error fetching section5 data:", error);
+        console.error("Error fetching landing data:", error);
       }
     };
 
