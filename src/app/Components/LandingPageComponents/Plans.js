@@ -13,6 +13,7 @@ const Plans = React.forwardRef((props, ref) => {
   });
 
   const [plans, setPlans] = useState([]);
+  const [shifts, setShifts] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,23 +33,29 @@ const Plans = React.forwardRef((props, ref) => {
     };
 
     const fetchPlans = async () => {
+      const token = localStorage.getItem('token');
       try {
-        const response = await fetch(`https://appointify.coinagesoft.com/api/ConsultationPlan/get-all`);
+        const [plansRes, shiftsRes] = await Promise.all([
+          fetch('http://localhost:5000/api/admin/plans/all', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch('http://localhost:5000/api/admin/shift', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch plans');
-        }
+        if (!plansRes.ok) throw new Error('Failed to fetch plans');
+        if (!shiftsRes.ok) throw new Error('Failed to fetch shifts');
 
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          setPlans(data);
-        } else {
-          console.error('Expected an array for plans, but got:', data);
-          setPlans([]);
-        }
+        const plansData = await plansRes.json();
+        const shiftsData = await shiftsRes.json();
+
+        setPlans(plansData);
+        setShifts(shiftsData);
       } catch (error) {
-        console.error('Error fetching plans:', error);
+        console.error('Error fetching plans or shifts:', error);
         setPlans([]);
+        setShifts([]);
       }
     };
 
