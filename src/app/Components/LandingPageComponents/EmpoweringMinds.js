@@ -11,11 +11,13 @@ const EmpoweringMinds = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://appointify.coinagesoft.com/api/ConsultantProfile/getConsultantProfile`);
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('adminId') || '67adc6aa-6fac-4c37-9f00-632bf483b916';
+        const response = await fetch(`http://localhost:5000/api/landing/${adminId}`);
         if (!response.ok) throw new Error("Failed to fetch consultant data");
 
         const result = await response.json();
-        const data = result[0];
+        const data = result.data;
 
         // Split the long description string into array of paragraphs
         const rawDescription = data.section3_Description || '';
@@ -53,7 +55,7 @@ const EmpoweringMinds = () => {
           <img
             src={
               consultantInfo.section3_Image
-                ? `https://appointify.coinagesoft.com${consultantInfo.section3_Image}`
+                ? `http://localhost:5000${consultantInfo.section3_Image}`
                 : "/assets/img/psychological-help-jpg.jpg"
             }
             // alt="Empowering Minds"

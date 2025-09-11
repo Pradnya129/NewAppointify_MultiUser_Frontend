@@ -8,18 +8,24 @@ const API_URL = process.env.REACT_APP_API_URL;
 const FAQSection = () => {
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const API_BASE = `https://appointify.coinagesoft.com/api/Faq`;
 
   useEffect(() => {
-    axios.get(API_BASE)
-      .then((res) => {
-        setFaqs(res.data);
+    const fetchFAQs = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5000/api/admin/faq');
+        setFaqs(response.data.data || []);
+      } catch (err) {
+        console.error('Error fetching FAQs:', err);
+        setError('Failed to load FAQs. Please try again.');
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load FAQs:', err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchFAQs();
   }, []);
 
   // Split FAQs into two columns
@@ -41,6 +47,10 @@ const FAQSection = () => {
         {loading ? (
           <div className="text-center my-5">
             <Spinner animation="border" variant="primary" />
+          </div>
+        ) : error ? (
+          <div className="text-center text-danger my-5">
+            {error}
           </div>
         ) : (
           <>

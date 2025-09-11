@@ -8,11 +8,13 @@ const Consultant_Info = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`https://appointify.coinagesoft.com/api/ConsultantProfile/getConsultantProfile`);
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminId = urlParams.get('adminId') || '67adc6aa-6fac-4c37-9f00-632bf483b916';
+        const response = await fetch(`http://localhost:5000/api/landing/${adminId}`);
         if (!response.ok) throw new Error("Failed to fetch consultant data");
         const result = await response.json();
-        console.log("result", result[0]);
-        setConsultantData(result[0]);
+        console.log("result", result.data);
+        setConsultantData(result.data);
       } catch (error) {
         console.error("Error fetching consultant data:", error);
       }
@@ -33,10 +35,10 @@ const Consultant_Info = () => {
         onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         src={
           consultantData.section2_Image
-            ? `https://appointify.coinagesoft.com${consultantData.section2_Image}`
+            ? `http://localhost:5000${consultantData.section2_Image}`
             : "/assets/img/160x160/img8.jpg"
         }
-        alt={consultantData.section2_Image}
+        alt={consultantData.fullName}
       />
     </div>
 
