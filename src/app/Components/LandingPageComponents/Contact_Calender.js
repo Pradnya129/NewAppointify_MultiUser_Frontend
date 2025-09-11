@@ -4,6 +4,8 @@ import 'react-time-picker/dist/TimePicker.css';
 import MiniCalendar from './MiniCalendar';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
+import { jwtDecode } from "jwt-decode";
+
 
 const TimePicker = dynamic(() => import('react-time-picker'), { ssr: false });
 
@@ -12,11 +14,16 @@ const Contact_Calender = React.forwardRef((props, ref) => {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [availablePlans, setAvailablePlans] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
 
   useEffect(() => {
     const fetchPlans = async () => {
+          const token = localStorage.getItem('token');
+
       try {
-        const res = await fetch("https://appointify.coinagesoft.com/api/ConsultationPlan/get-all");
+        const res = await fetch('http://localhost:5000/api/admin/plans/all', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         const data = await res.json();
         // setAvailablePlans(Array.isArray(data) ? data : []);
         if (Array.isArray(data) && data.length > 0) {
@@ -106,6 +113,38 @@ const Contact_Calender = React.forwardRef((props, ref) => {
     }
   };
 
+  // Utility to generate slots
+function generateSlots(startTime, endTime, durationMinutes, bufferMinutes, booked = []) {
+  const slots = [];
+  let [startHour, startMin] = startTime.split(":").map(Number);
+  let [endHour, endMin] = endTime.split(":").map(Number);
+
+  let start = new Date();
+  start.setHours(startHour, startMin, 0, 0);
+
+  let end = new Date();
+  end.setHours(endHour, endMin, 0, 0);
+
+  while (start.getTime() + durationMinutes * 60000 <= end.getTime()) {
+    const slotStart = new Date(start);
+    const slotEnd = new Date(start.getTime() + durationMinutes * 60000);
+
+    const formattedStart = slotStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const formattedEnd = slotEnd.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const slotLabel = `${formattedStart} - ${formattedEnd}`;
+
+    // only add if not booked
+    if (!booked.includes(formattedStart)) {
+      slots.push(formattedStart); // or slotLabel if you want range display
+    }
+
+    // move pointer (duration + buffer)
+    start = new Date(start.getTime() + (durationMinutes + bufferMinutes) * 60000);
+  }
+
+  return slots;
+}
+
   // Use a native date input so user can select any date
   // We'll keep the date in "yyyy-mm-dd" format from the input,
   // then format it when needed for display.
@@ -138,73 +177,81 @@ const Contact_Calender = React.forwardRef((props, ref) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const errors = validateForm();
+  if (Object.keys(errors).length > 0) {
+    setFormErrors(errors);
+    return;
+  }
+  setFormErrors({});
+
+  try {
+    // ✅ Find selected plan
+    const selectedPlan = availablePlans.find(p => p.planName === formData.plan);
+    if (!selectedPlan) {
+      alert("Please select a valid plan.");
       return;
     }
-    setFormErrors({});
-    try {
-      // Submit appointment to backend
-      const response = await fetch(`https://appointify.coinagesoft.com/api/CustomerAppointment/CreateAppointment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      console.log('Appointment created:', JSON.stringify(formData));
-      if (response.ok) {
-        const appointment = await response.json();
-        console.log('Appointment created now:', JSON.stringify(formData));
-        // Razorpay integration remains unchanged
-        const razorpayOptions = {
-  key: appointment.razorpayKey,
-  amount: appointment.amount,
-  currency: 'INR',
-  name: 'Aura Enterprises',
-  description: 'Book your appointment',
-  order_id: appointment.orderId,
-  handler: function (response) {
-    console.log('Payment success:', response);
-    setPaymentCompleted(true);
-    verifyPayment(response);
-  },
-  prefill: {
-    name: appointment.name,
-    email: appointment.email,
-    contact: appointment.contact,
-  },
+
+    // ✅ Construct request body as backend expects
+    const payload = {
+      ...formData,
+      adminId: selectedPlan.adminId,  // 👈 pick adminId from plan
+    };
+
+    console.log("📤 Sending appointment payload:", payload);
+
+    const response = await fetch(`http://localhost:5000/api/customer-appointments/paid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    const appointment = await response.json();
+    console.log("✅ Appointment created:", appointment);
+
+    // 🛠️ Razorpay integration
+    const razorpayOptions = {
+      key: appointment.data.razorpayKey,
+      amount: appointment.data.amount,
+      currency: "INR",
+      name: "Aura Enterprises",
+      description: "Book your appointment",
+      order_id: appointment.data.orderId,
+      handler: function (response) {
+        console.log("💰 Payment success:", response);
+        setPaymentCompleted(true);
+        verifyPayment(response);
+      },
+      prefill: {
+        name: appointment.data.name,
+        email: appointment.data.email,
+        contact: appointment.data.phoneNumber,
+      },
+    };
+
+    const rzp1 = new window.Razorpay(razorpayOptions);
+    setLoadingPayment(true);
+    rzp1.on("payment.failed", function () {
+      setLoadingPayment(false);
+      setPaymentCompleted(true);
+      showModal("failureModal");
+    });
+    rzp1.open();
+
+  } catch (error) {
+    console.error("❌ Error creating appointment:", error);
+    alert("An error occurred while booking the appointment.");
+    showModal("failureModal");
+  }
 };
 
-        const rzp1 = new window.Razorpay(razorpayOptions);
-        setLoadingPayment(true);
-        rzp1.on('payment.failed', function () {
-          setLoadingPayment(false);
-          setPaymentCompleted(true);
-          showModal('failureModal');
-        });
-        rzp1.on('modal.closed', function () {
-          console.log('Razorpay modal closed');
-          setLoadingPayment(false);
-          if (!paymentCompleted) {
-            setTimeout(() => { showModal('successModal'); }, 300);
-          }
-        });
-        rzp1.open();
-        setTimeout(() => { setLoadingPayment(false); }, 5000);
-        setTimeout(() => { setPaymentCompleted(false); }, 5000);
-      } else {
-        console.log("response", response, "formData", formData);
-        alert('Failed to book the appointment.');
-        showModal('failureModal');
-      }
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-      alert('An error occurred while booking the appointment.');
-      showModal('failureModal');
-    }
-  };
   function openReceiptPdf(base64Pdf) {
     const byteCharacters = atob(base64Pdf);
     const byteArray = new Uint8Array(byteCharacters.length);
@@ -234,13 +281,13 @@ const Contact_Calender = React.forwardRef((props, ref) => {
 
   const verifyPayment = async (paymentResponse) => {
     try {
-      const response = await fetch(`https://appointify.coinagesoft.com/api/CustomerAppointment/VerifyPayment`, {
+      const response = await fetch(`http://localhost:5000/api/customer-appointments/verify-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-  razorpay_order_id: paymentResponse.razorpay_order_id,
-  razorpay_payment_id: paymentResponse.razorpay_payment_id,
-  razorpay_signature: paymentResponse.razorpay_signature
+  orderId: paymentResponse.razorpay_order_id,
+  paymentId: paymentResponse.razorpay_payment_id,
+  signature: paymentResponse.razorpay_signature
 })
         
       });
@@ -287,22 +334,72 @@ const Contact_Calender = React.forwardRef((props, ref) => {
     }, 3000);
   };
 
-  useEffect(() => {
-    if (formData.appointmentDate && formData.plan) {
-      axios.get("https://appointify.coinagesoft.com/api/CustomerAppointment/GetAllAppointments")
-        .then((res) => {
-          const appointments = res.data || [];
+useEffect(() => {
+  if (!formData.appointmentDate || !formData.plan) return;
 
-        
-          const bookedSlots = appointments
-            .filter(a => a.appointmentDate === formData.appointmentDate)
-            .map(a => a.appointmentTime); 
+const token = localStorage.getItem("token"); // or sessionStorage
+if (!token) {
+  console.error("No token found. Please login again.");
+  return;
+}
 
-          setBookedTimeSlots(bookedSlots);
-        })
-        .catch(err => console.error("Error fetching appointments:", err));
-    }
-  }, [formData.appointmentDate, formData.plan]);
+const headers = {
+  Authorization: `Bearer ${token}`,
+};
+  if (!token) return;
+
+  let decoded;
+  try {
+    decoded = jwtDecode(token);
+  } catch (e) {
+    console.error("Failed to decode token", e);
+    return;
+  }
+  const adminId = decoded.id;
+
+  // fetch appointments + rules + shifts
+  Promise.all([
+    axios.get(`http://localhost:5000/api/customer-appointments/admin/${adminId}`, { headers }),
+    axios.get("http://localhost:5000/api/plan-shift-buffer-rule/all", { headers }),
+    axios.get("http://localhost:5000/api/admin/shift", { headers }),
+  ])
+    .then(([appointmentsRes, rulesRes, shiftsRes]) => {
+      const appointments = appointmentsRes.data?.data || [];
+      const rules = rulesRes.data?.rules || [];
+      const shifts = shiftsRes.data || [];
+
+      // find selected plan
+      const selectedPlan = availablePlans.find((p) => p.planName === formData.plan);
+      if (!selectedPlan) return;
+
+      // find buffer + shiftId for plan
+      const rule = rules.find((r) => r.planId === selectedPlan.planId);
+      if (!rule) return;
+
+      const shift = shifts.find((s) => s.id === rule.shiftId);
+      if (!shift) return;
+
+      // collect booked slots for this date
+      const booked = appointments
+        .filter((a) => a.appointmentDate === formData.appointmentDate)
+        .map((a) => a.appointmentTime);
+
+      setBookedTimeSlots(booked);
+
+      // generate available slots
+      const slots = generateSlots(
+        shift.startTime, // "10:00:00"
+        shift.endTime,   // "22:00:00"
+        Number(selectedPlan.planDuration), // minutes
+        Number(rule.bufferInMinutes),      // minutes
+        booked
+      );
+
+      setAvailableSlots(slots);
+    })
+    .catch((err) => console.error("Error fetching slots:", err));
+}, [formData.appointmentDate, formData.plan, availablePlans]);
+
 
 
   return (
@@ -468,6 +565,7 @@ const Contact_Calender = React.forwardRef((props, ref) => {
       selected={formData.appointmentDate}
       duration={formData.duration}
       bookedTimeSlots={bookedTimeSlots}
+      availableSlots={availableSlots}
       onDateChange={(date) => {
         setFormData(prev => ({
           ...prev,
