@@ -103,7 +103,7 @@ const Hero = ({ scrollToSectionHeader }) => {
                             className="avatar-img rounded-pill"
                             src={
                               consultantData.profileImage
-                                  ?  `http://localhost:5000/${consultantData.profileImage}`
+                                  ?  `http://localhost:5000${consultantData.profileImage}`
                                 : '/assets/img/160x160/img6.jpg'
                             }
                             alt="Doctor"

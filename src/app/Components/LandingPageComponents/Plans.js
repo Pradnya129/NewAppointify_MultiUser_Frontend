@@ -119,10 +119,13 @@ const Plans = React.forwardRef((props, ref) => {
           <p className="text-white-75 small mb-3 text-center">{plan.planDescription}</p>
 
           {/* Plan Features */}
-          <div
-            className="plan-features px-2 mb-4"
-            dangerouslySetInnerHTML={{ __html: plan.planFeatures }}
-          />
+          <div >
+                    <ul >
+                      {(Array.isArray(plan.planFeatures) ? plan.planFeatures : JSON.parse(plan.planFeatures || '[]')).map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
 
           <div className="flex-grow-1"></div>
         </div>
