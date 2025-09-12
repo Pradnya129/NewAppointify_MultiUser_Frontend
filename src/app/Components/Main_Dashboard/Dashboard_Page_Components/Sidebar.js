@@ -279,12 +279,7 @@ const Sidebar = ({ mobileSidebarVisible, setMobileSidebarVisible }) => {
                 <div>Subscription Renewals</div>
               </Link>
             </li>
-            <li className="menu-item">
-              <Link href="/Dashboard/Transactions" className={`menu-link ${pathname === '/Dashboard/Transactions' ? 'active' : ''}`}>
-                <i className="menu-icon tf-icons ri-exchange-dollar-line me-2"></i>
-                <div>Transactions</div>
-              </Link>
-            </li>
+           
           </ul>
         )}
       </aside>
