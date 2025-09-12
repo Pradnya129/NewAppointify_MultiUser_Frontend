@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { jwtDecode } from "jwt-decode";
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const Section3 = () => {
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
@@ -14,39 +15,40 @@ const Section3 = () => {
   const [statusMessage, setStatusMessage] = useState({ type: '', text: '' });
   const [isTaglineValid, setIsTaglineValid] = useState(true);
   const [isDescriptionValid, setIsDescriptionValid] = useState(true);
-  const [isImageValid, setIsImageValid] = useState(true); // Image validation state
   const [landingId, setLandingId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-           const token = localStorage.getItem("token");
-        
-          if (!token) return;
-        
-          const decoded = jwtDecode(token);
-          const adminId = decoded.id;
-        const response = await fetch(`http://localhost:5000/api/landing/${adminId}`);
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const decoded = jwtDecode(token);
+        const adminId = decoded.id;
+
+        const response = await fetch(`${API_URL}/api/landing/${adminId}`);
         const data = await response.json();
-        console.log("data",data.data)
+
         if (data && data.data) {
           const section3Data = data.data;
-  setLandingId(section3Data.id);
-          // Safe access with fallback default values
+          setLandingId(section3Data.id || section3Data._id);
           setTagline(section3Data?.section3_Tagline || '');
           setDescription(section3Data?.section3_Description || '');
- setPreviewUrl(
+          setPreviewUrl(
             section3Data?.section3_Image
-              ? `http://localhost:5000${section3Data.section3_Image}`
+              ? `${API_URL}${section3Data.section3_Image}`
               : '/assets/img/stethoscope.jpg'
-          );          setStatusMessage({ type: '', text: '' });
+          );
+          setStatusMessage({ type: '', text: '' });
         } else {
           setStatusMessage({ type: 'error', text: 'No data available for section 3' });
         }
       } catch (err) {
-          setStatusMessage({ type: 'error', text: 'Failed to fetch section 3 content.' });
+        console.error("Fetch error:", err);
+        setStatusMessage({ type: 'error', text: 'Failed to fetch section 3 content.' });
       } finally {
-          setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -80,42 +82,35 @@ const Section3 = () => {
       setIsDescriptionValid(true);
     }
 
-    if (!relatedImage) {
-      setIsImageValid(false);  // Image is required validation
-      return;
-    } else {
-      setIsImageValid(true);
-    }
-
     try {
-         const token = localStorage.getItem("token");
-        
-          if (!token) return;
-        
-          const decoded = jwtDecode(token);
-          const adminId = decoded.id;
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
       const formData = new FormData();
-      formData.append('Section3_Tagline', tagline);
+      formData.append('section3_Tagline', tagline);
       formData.append('section3_Description', description);
-      formData.append('section3_Image', relatedImage); // ✅ added image
+
+      if (relatedImage) {
+        formData.append('section3_Image', relatedImage); // only if new image selected
+      }
 
       setLoading(true);
       const response = await axios.patch(
-       `http://localhost:5000/api/landing/${landingId}`,
+        `${API_URL}/api/landing/${landingId}`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`, // include token
           },
         }
       );
 
       if (response.status === 200) {
-          setLandingId(response.data.data.id);
+        setLandingId(response.data.data.id || response.data.data._id);
         setStatusMessage({ type: 'success', text: 'Section 3 updated successfully!' });
         setIsEdited(false);
       } else {
-          setLandingId(null);
         setStatusMessage({ type: 'error', text: 'Failed to update Section 3' });
       }
     } catch (error) {
@@ -129,7 +124,7 @@ const Section3 = () => {
   return (
     <div>
       <h5 className="text-start mb-4 text-muted mt-5">Section 3 - Manage Consultant Info</h5>
-       {statusMessage.text && (
+      {statusMessage.text && (
         <div className={`alert ${statusMessage.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
           {statusMessage.text}
         </div>
@@ -138,7 +133,10 @@ const Section3 = () => {
         {/* Image Upload */}
         <div className="row align-items-center mb-4">
           <div className="col-md-4 text-center">
-            <div className="border border-secondary rounded mx-auto" style={{ width: '150px', height: '150px', overflow: 'hidden' }}>
+            <div
+              className="border border-secondary rounded mx-auto"
+              style={{ width: '150px', height: '150px', overflow: 'hidden' }}
+            >
               <img
                 src={previewUrl}
                 alt="Related"
@@ -147,11 +145,10 @@ const Section3 = () => {
             </div>
             <input
               type="file"
-              className={`form-control mt-3 w-75 mx-auto ${!isImageValid ? 'is-invalid' : ''}`}  // Image validation
+              className="form-control mt-3 w-75 mx-auto"
               accept="image/*"
               onChange={handleImageChange}
             />
-            {!isImageValid && <div className="invalid-feedback">Image is required.</div>}  {/* Image error message */}
             <p className="mt-2 text-muted">Recommended size: 150x150</p>
           </div>
 

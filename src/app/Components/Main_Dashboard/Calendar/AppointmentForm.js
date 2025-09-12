@@ -153,61 +153,68 @@ export default function AppointmentForm({
 }, [formData.duration, formData.bufferInMinutes, shiftStart, shiftEnd, bookedTimeSlots]);
 
   // When plan is selected -> fetch plan-shift-rule, set buffer & shift, update form data amount/duration
-  const handlePlanChange = async (e) => {
-    const planName = e.target.value;
-    const selectedPlan = plans.find(p => p.planName === planName);
-    if (!selectedPlan) {
-      setFormData(prev => ({ ...prev, plan: planName }));
-      return;
-    }
+const handlePlanChange = async (e) => {
+  const planName = e.target.value;
+  const selectedPlan = plans.find(p => p.planName === planName);
 
-    setFormData(prev => ({
-      ...prev,
-      plan: selectedPlan.planName,
-      amount: selectedPlan.planPrice,
-      duration: selectedPlan.planDuration,
-      appointmentTime: ''
-    }));
+  if (!selectedPlan) {
+    setFormData(prev => ({ ...prev, plan: planName }));
+    return;
+  }
 
-    try {
-      // 1. get rules
-      const rulesResp = await api.getPlanShiftRules(selectedPlan.planId);
-      const rules = rulesResp.rules ?? [];
-      const rule = rules[0];
-    if (!rule) {
-  setFormData(prev => ({ ...prev, bufferInMinutes: 0 }));
-} else {
   setFormData(prev => ({
     ...prev,
-    bufferInMinutes: rule.bufferInMinutes ?? 0
+    plan: selectedPlan.planName,
+    amount: selectedPlan.planPrice,
+    duration: selectedPlan.planDuration,
+    appointmentTime: ""
   }));
-  setSelectedShiftId(rule.shiftId);
-}
 
+  try {
+    // 🔹 fetch all rules
+    const rulesResp = await api.getPlanShiftRules(selectedPlan.planId);
+    const rules = rulesResp.rules ?? [];
 
-      // 2. fetch shifts and find the matched shift
-      const shiftsArray = await api.getShifts();
-      const shift = (Array.isArray(shiftsArray) ? shiftsArray : []).find(s => s.id === (rule?.shiftId));
-      if (shift) {
-        // create Date objects for today based on shift times
-        const today = new Date();
-        const dateStr = today.toISOString().split('T')[0];
+    // 🔹 find rule for this planId
+    const rule = rules.find(r => r.planId === selectedPlan.planId);
 
-        const startDate = new Date(`${dateStr}T${shift.startTime}`);
-        let endDate = new Date(`${dateStr}T${shift.endTime}`);
-        if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
-
-        // update parent's slot start/end via setter functions
-        if (typeof setSlotStartTime === 'function') setSlotStartTime(startDate);
-        if (typeof setSlotEndTime === 'function') setSlotEndTime(endDate);
-
-        // set selectedPlanId in parent
-        if (typeof setSelectedPlanId === 'function') setSelectedPlanId(selectedPlan.planId);
-      }
-    } catch (err) {
-      console.error('Error while selecting plan:', err);
+    if (!rule) {
+      setFormData(prev => ({ ...prev, bufferInMinutes: 0 }));
+      setBufferInMinutes(0);
+      setSelectedShiftId(null);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        bufferInMinutes: rule.bufferInMinutes ?? 0
+      }));
+      setBufferInMinutes(rule.bufferInMinutes ?? 0);
+      setSelectedShiftId(rule.shiftId);
     }
-  };
+
+    // 🔹 fetch shifts and match the one from this rule
+    const shiftsArray = await api.getShifts();
+    const shift = (Array.isArray(shiftsArray) ? shiftsArray : []).find(
+      s => s.id === rule?.shiftId
+    );
+
+    if (shift) {
+      const today = new Date();
+      const dateStr = today.toISOString().split("T")[0];
+
+      const startDate = new Date(`${dateStr}T${shift.startTime}`);
+      let endDate = new Date(`${dateStr}T${shift.endTime}`);
+      if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
+
+      if (typeof setSlotStartTime === "function") setSlotStartTime(startDate);
+      if (typeof setSlotEndTime === "function") setSlotEndTime(endDate);
+      if (typeof setSelectedPlanId === "function")
+        setSelectedPlanId(selectedPlan.planId);
+    }
+  } catch (err) {
+    console.error("Error while selecting plan:", err);
+  }
+};
+
 
   // Handle date selection -> load booked slots for that date
   const handleDateSelect = (e) => {
